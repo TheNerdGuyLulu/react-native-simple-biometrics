@@ -7,12 +7,22 @@
 RCT_EXPORT_MODULE()
 
 RCT_REMAP_METHOD(canAuthenticate,
+                 policy:(NSString *)policy
                  canAuthenticateWithResolver:(RCTPromiseResolveBlock)resolve
                  rejecter:(RCTPromiseRejectBlock)reject)
 {
+    
     LAContext *context = [[LAContext alloc] init];
     NSError *la_error = nil;
-    BOOL canEvaluatePolicy = [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&la_error];
+    
+    BOOL canEvaluatePolicy;
+    
+    if ([policy isEqualToString:@"LAPolicyDeviceOwnerAuthenticationWithBiometrics"]) {
+        canEvaluatePolicy = [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&la_error];
+    } else {
+        canEvaluatePolicy = [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthentication error:&la_error];
+    }
+    
     
     if (canEvaluatePolicy) {
         resolve(@(YES));
@@ -24,6 +34,7 @@ RCT_REMAP_METHOD(canAuthenticate,
 RCT_REMAP_METHOD(requestBioAuth,
                  title:(NSString *)title
                  subtitle:(NSString *)subtitle
+                 policy:(NSString *)policy
                  requestBioAuthWithResolver:(RCTPromiseResolveBlock)resolve
                  rejecter:(RCTPromiseRejectBlock)reject)
 {
@@ -35,7 +46,7 @@ RCT_REMAP_METHOD(requestBioAuth,
         context.localizedFallbackTitle = title;
         
         LAPolicy localAuthPolicy = LAPolicyDeviceOwnerAuthenticationWithBiometrics;
-        if (![[UIDevice currentDevice].systemVersion hasPrefix:@"8."]) {
+        if (![[UIDevice currentDevice].systemVersion hasPrefix:@"8."] && [policy isEqualToString:@"LAPolicyDeviceOwnerAuthentication"]) {
             localAuthPolicy = LAPolicyDeviceOwnerAuthentication;
         }
         
