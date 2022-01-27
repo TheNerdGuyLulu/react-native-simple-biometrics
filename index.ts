@@ -8,6 +8,12 @@ export enum AuthenticationPolicy {
   Passcode = "Passcode"
 }
 
+export enum AuthenticationResultType {
+  Unknown = -1,
+  Passcode = 1,
+  Biometric = 2
+}
+
 const isIOS = Platform.OS === "ios";
 const isAndroid = Platform.OS === "android";
 
@@ -32,7 +38,7 @@ export class ReactNativeSimpleBiometrics {
     return this;
   }
 
-  public authenticate(promptTitle: string, promptMessage: string, negativeButtonMessage?: string): Promise<string> {
+  public authenticate(promptTitle: string, promptMessage: string, negativeButtonMessage?: string): Promise<string | AuthenticationResultType> {
     if (typeof promptTitle !== "string" || !promptTitle) {
       throw new Error("prompt title must be a non empty string");
     }
@@ -51,9 +57,12 @@ export class ReactNativeSimpleBiometrics {
       return RNBiometricsNative.requestBioAuth(promptTitle, promptMessage, negativeButtonMessage, this.confirmationRequired, this.policy);
     } else
       throw new Error("Unsupported platform");
-  };
+  }
 
   public static of(policy: AuthenticationPolicy): ReactNativeSimpleBiometrics {
+    if (policy === AuthenticationPolicy.Passcode && isIOS) {
+      throw new Error("Passcode authentication is not supported on iOS");
+    }
     return new ReactNativeSimpleBiometrics(policy);
   }
 }

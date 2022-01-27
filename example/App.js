@@ -1,59 +1,67 @@
-import React, {useState, useCallback} from 'react';
-import {Text, SafeAreaView, TouchableOpacity, StatusBar} from 'react-native';
-import RNBiometrics from 'react-native-simple-biometrics';
+/**
+ * Sample React Native App
+ * https://github.com/facebook/react-native
+ *
+ * @format
+ * @flow strict-local
+ */
 
-const App = () => {
-  const [canAuth, setCanAuth] = useState(null);
-  const [authenticated, setAuthenticated] = useState(null);
-
-  const checkCanAuth = useCallback(async () => {
-    const success = await RNBiometrics.canAuthenticate();
-    setCanAuth(success);
-  }, []);
-
-  const authenticate = useCallback(async () => {
-    try {
-      const success = await RNBiometrics.requestBioAuth(
-        'Security',
-        'Authenticate to View',
-      );
-      setAuthenticated(success);
-    } catch (err) {
-      console.log(err);
-      setAuthenticated(false);
-    }
-  }, []);
-
-  return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        padding: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#5e548e',
-      }}>
-      <StatusBar backgroundColor="#fa7e61" />
-      <TouchableOpacity
-        onPress={authenticate}
-        style={{
-          padding: 16,
-          borderRadius: 8,
-          alignItems: 'center',
-          backgroundColor: '#fa7e61',
-        }}>
-        <Text style={{color: 'white', fontSize: 18, fontWeight: 'bold'}}>
-          Bank Balance
-        </Text>
-        <Text style={{color: '#6F1D1B', padding: 12}}>
-          {authenticated ? '🔓' : '🔒'}
-        </Text>
-        <Text style={{color: '#6F1D1B'}}>
-          {authenticated ? '$1,000,000' : '(tap to unlock)'}
-        </Text>
-      </TouchableOpacity>
-    </SafeAreaView>
-  );
-};
-
-export default App;
+ import React, { useEffect } from "react";
+ import { Button, NativeEventEmitter, NativeModules, SafeAreaView, StyleSheet, Text } from "react-native";
+ import { AuthenticationPolicy, ReactNativeSimpleBiometrics } from "react-native-simple-biometrics";
+ 
+ const App = () => {
+   const [timeFailed, setTimesFailed] = React.useState(0);
+   const auth = ReactNativeSimpleBiometrics.of(AuthenticationPolicy.Biometric);
+ 
+   const verify = async () => {
+     setTimesFailed(0); // Reset times failed
+     try {
+       const can = await auth.canAuthenticate();
+       if (can) {
+         try {
+           const success = await auth
+             .setConfirmationRequired(false)
+             .authenticate("Title", "Message", "Negative");
+           console.log(success);
+         } catch (err) {
+           console.log(err);
+         }
+       }
+     } catch (canError) {
+       console.log(canError);
+     }
+   };
+ 
+   useEffect(() => {
+     // Listen for authentication failures
+     const eventEmitter = new NativeEventEmitter(NativeModules.RNBiometrics);
+     const eventListener = eventEmitter.addListener(
+       'AuthenticationFailed',
+       event => {
+         setTimesFailed(times => times + 1); // Increment times failed
+       },
+     );
+     return () => {
+       eventListener.remove();
+     };
+   }, []);
+ 
+   return (
+     <SafeAreaView style={styles.container}>
+       <Text>Times failed: {timeFailed}</Text>
+       <Button title={"AUTHENTICATE"} onPress={verify} />
+     </SafeAreaView>
+   );
+ };
+ 
+ const styles = StyleSheet.create({
+   container: {
+     flex: 1,
+     justifyContent: "center",
+     alignItems: "center",
+   },
+ });
+ 
+ export default App;
+ 

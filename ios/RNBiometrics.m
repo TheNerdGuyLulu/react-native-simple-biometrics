@@ -17,7 +17,7 @@ RCT_REMAP_METHOD(canAuthenticate,
     
     BOOL canEvaluatePolicy;
     
-    if ([policy isEqualToString:@"Biometric"]) {
+    if ([policy isEqualToString:@"LAPolicyDeviceOwnerAuthenticationWithBiometrics"]) {
         canEvaluatePolicy = [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&la_error];
     } else {
         canEvaluatePolicy = [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthentication error:&la_error];
@@ -46,7 +46,7 @@ RCT_REMAP_METHOD(requestBioAuth,
         context.localizedFallbackTitle = title;
         
         LAPolicy localAuthPolicy = LAPolicyDeviceOwnerAuthenticationWithBiometrics;
-        if (![[UIDevice currentDevice].systemVersion hasPrefix:@"8."] && [policy isEqualToString:@"BiometricOrPasscode"]) {
+        if (![[UIDevice currentDevice].systemVersion hasPrefix:@"8."] && [policy isEqualToString:@"LAPolicyDeviceOwnerAuthentication"]) {
             localAuthPolicy = LAPolicyDeviceOwnerAuthentication;
         }
         
